@@ -24,10 +24,15 @@
 ;
 ;	Changes in program:
 ;		2017-09-11: File created
+;		2017-09-14: Redid delay and pattern code
 ;
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 .include "m2560def.inc"
+
+.EQU DELAY	= 500	;ms 
+
+.DEF OUTPUT = r16
 
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ; Initialization
@@ -43,9 +48,7 @@ ldi r31, 0b11111110 			; Initialize register 31 (r31) for ring counter function
 ldi r16, 0xFF				; Set up PORTB as output
 out DDRB, r16	
 
-.DEF OUTPUT = r16
-
-ldi OUTPUT, $1
+ldi OUTPUT, 0x01
 
 rjmp main
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -56,19 +59,41 @@ rjmp main
 ; Purpose: Wait N milliseconds
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 wait_milliseconds:
+	push r16			; Store data in r16 and r17 to the stack first
+	push r17
+
+	; These instructions take approx 1 ms to complete on ATMEGA2560
 	L0:
+	ldi r16, low(500)
+	ldi r17, high(500)
+
+	L1:
+	dec r16
+	nop
+	brne L1				
+	dec r17
+	nop
+	brne L1
+
+	; To gain N delay, repeat above instructions N times with this
 	sbiw r25:r24, 1			; 16-bit decrementation by subtraction
 	brne L0				; Continue until the 16-bit value is 0x00
-	nop
+
+	pop r17				; Return stored data to r16 and r17 from stack
+	pop r16
 ret
 
 main:
+	com OUTPUT
 	out PORTB, OUTPUT		; OUTPUT was initialized, put it out right away
+	com OUTPUT
 
-	ldi r24, low(500)		; Load an integer to register pair r25:r24
-	ldi r25, high(500)
+	ldi r24, low(DELAY)		; Load an integer to register pair r25:r24
+	ldi r25, high(DELAY)
 	rcall wait_milliseconds		; Call the delay subroutine
 
+	ldi r17, 0
 	lsl OUTPUT			; Do the actual function
+	adc OUTPUT, r17	
 
 rjmp main				; Loop back to main
