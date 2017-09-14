@@ -43,12 +43,10 @@ out SPL, r16
 ldi r16, high(RAMEND)
 out SPH, r16
 
-ldi r31, 0b11111110 			; Initialize register 31 (r31) for ring counter function
-
 ldi r16, 0xFF				; Set up PORTB as output
 out DDRB, r16	
 
-ldi OUTPUT, 0x01
+ldi OUTPUT, 0x01			; Initialize OUTPUT
 
 rjmp main
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
