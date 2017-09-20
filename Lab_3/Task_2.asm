@@ -1,11 +1,42 @@
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;	1DT301, Computer Technology I
+;	Date: 2016 - 09 - 18
+;	Author:
+;		Martin Lyrå
+;		Yinlong Yao
+;
+;	Lab number: 3
+;	Title: Interrupts
+;
+;	Hardware: STK600, CPU ATmega2560
+;
+;	Function: 	Runs ring counter on all LEDs, button SW0
+;				enables function to switch between ring or
+;				Johnson counter
+;
+;	Input ports: PORTD
+;
+;	Output ports: PORTB
+;
+;	Subroutines: 
+;	-	ring_shift
+;	-	johnson_shift
+;		-	shift_pos
+;		-	shift_neg
+;	- 	delay
+;	-	ext_interrupt_0
+;
+;	Included files: m2560def.inc
+;
+;	Other information:
+;
+;	Changes in program:
+;		2017-09-18: File created
+;		2017-09-20: Documentation
+;
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 .include "m2560def.inc"
-
-.org 0x00
-jmp reset
-
-.org 0x02
-jmp ext_interrupt_0
-
 
 .DEF STATE = r16
 .DEF OUTPUT = r17
@@ -13,6 +44,12 @@ jmp ext_interrupt_0
 
 .EQU STATE_RING	= -0			; STATE_RING is 0b0000_0000
 .EQU STATE_JOHNSON = -1			; STATE_JOHNSON is 0b1111_1111
+
+.org 0x00
+jmp reset
+
+.org 0x02
+jmp ext_interrupt_0				; Interrupt handler for INT0
 
 .org 0x72
 reset:
@@ -28,13 +65,13 @@ out DDRD, r16
 ldi r16, 0xFF					; Setup PORTB as output
 out DDRB, r16
 
-ldi r16, 0b0000_0001
+ldi r16, 0b0000_0001			; Enable INT0
 out EIMSK, r16
 
-ldi r16, 0b0000_0010
+ldi r16, 0b0000_0010			; Enable falling edge trigger for INT0
 sts EICRA, r16
 
-sei
+sei								; 
 
 ldi STATE, STATE_RING			; Load ring as the default state
 
@@ -104,8 +141,8 @@ ring_shift:
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ; delay
 ; Parameters: n/a
-; Purpose: Delay with less than 500 ms, check for button
-; 		   presses meantime
+; Purpose: Delay with less than 500 ms, aborts when 
+;			an interrupt has been triggered.
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 delay:
 	ldi r19, 2					; Innner counter
@@ -130,6 +167,12 @@ delay:
 	ldi ABORT, -0
 	ret
 
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+; ext_interrupt_0
+; Parameters: n/a
+; Purpose: 	Toggles the STATE between ring or Johnson,
+;			aborts the delay immediately after switching
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ext_interrupt_0:
 	com STATE
 	ldi ABORT, -1
