@@ -20,6 +20,11 @@ jmp udre0_handler
 
 .org 0x72
 reset:
+ldi temp, LOW(RAMEND)
+out SPL, temp
+ldi temp, HIGH(RAMEND)
+out SPH, temp
+
 ldi temp, 0xFF
 out DDRB, temp
 out PORTB, temp
