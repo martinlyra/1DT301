@@ -1,4 +1,6 @@
 ## Serial communication for task 3, 4, & 5
+<sub>*Assumption is made, that you who read this already had acquired and connected a RS232 cable and a jumper cable as per instructions on the PM.*</sub>
+
 In order to communicate with the board through serial. We used an application named PuTTY that came pre-installed on our computers.
 
 1. Start up PuTTY
