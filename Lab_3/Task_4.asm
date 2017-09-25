@@ -138,7 +138,7 @@ ret
 ; delay
 ; Parameters: n/a
 ; Purpose: 	Delay with less than 500 ms, aborts when 
-;			an interrupt has been triggered.
+;		an interrupt has been triggered (not in use here).
 ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 delay:
 	push r19
@@ -149,8 +149,8 @@ delay:
 	ldi r21, 2					; Outer counter
 
 	DL1:
-		cpi ABORT, -1			; Immediately abort delay if button has been pressed
-		breq _abort
+		;cpi ABORT, -1			; Immediately abort delay if button has been pressed
+		;breq _abort
 
 		dec r19
 		brne DL1
@@ -162,8 +162,8 @@ delay:
 		brne DL1
 		nop
 
-	_abort:
-	ldi ABORT, -0
+	;_abort:
+	;ldi ABORT, -0
 
 	pop r20
 	pop r19
