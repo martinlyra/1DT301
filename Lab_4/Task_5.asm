@@ -1,3 +1,34 @@
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;	1DT301, Computer Technology I
+;	Date: 2016 - 09 - 25
+;	Author:
+;		Martin Lyrå
+;		Yinlong Yao
+;
+;	Lab number: 4
+;	Title: Timer and URAT
+;
+;	Hardware: STK600, CPU ATmega2560
+;
+;	Function: 	Displays a ASCII character on LEDs and on 
+;				host computer's terminal from input via serial.
+;				Using interrupts.
+;
+;	Input ports:
+;
+;	Output ports: PORTB
+;
+;	Subroutines: 
+;
+;	Included files: m2560def.inc
+;
+;	Other information:
+;
+;	Changes in program:
+;		2017-09-25: File created
+;		2017-09-26: Documentation
+;
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 .include "m2560def.inc"
 
 ; 25 = 2400 bps
@@ -20,22 +51,23 @@ jmp udre0_handler
 
 .org 0x72
 reset:
+; Initialize stack pointer
 ldi temp, LOW(RAMEND)
 out SPL, temp
 ldi temp, HIGH(RAMEND)
 out SPH, temp
 
-ldi temp, 0xFF
+ldi temp, 0xFF			; Initialize PORTB as output and all LEDs extinguished
 out DDRB, temp
 out PORTB, temp
 
-ldi temp, UBRR_DEFAULT
+ldi temp, UBRR_DEFAULT	; Set Baud rate
 sts UBRR0L, temp
 
-ldi temp, (1<<RXEN0 | 1<<TXEN0 | 1<<RXCIE0)
+ldi temp, (1<<RXEN0 | 1<<TXEN0 | 1<<RXCIE0)	; Enable receive, transmit, and receive interrupt for URAT0
 sts UCSR0B, temp
 
-sei
+sei						; Enable global interrupts
 
 main:
 rjmp main
@@ -45,13 +77,13 @@ urxc0_handler:
 	in temp, SREG
 	push temp
 
-	lds input, UDR0
-	mov temp, input
+	lds input, UDR0		; Get input from data register
+	mov temp, input		
 	com temp
-	out PORTB, temp
+	out PORTB, temp		; Display the output on PORTB
 
 	lds temp, UCSR0B
-	ori temp, 1<<UDRIE0
+	ori temp, 1<<UDRIE0	; Enable data register empty interrupt for URAT0
 	sts UCSR0B, temp
 
 	pop temp
@@ -64,11 +96,11 @@ udre0_handler:
 	in temp, SREG
 	push temp
 
-	sts UDR0, input
-	clr input
+	sts UDR0, input		; Transmit the input on the serial connection
+	clr input			; We are done - clear the input
 
 	lds temp, UCSR0B
-	cbr temp, 1<<UDRIE0
+	cbr temp, 1<<UDRIE0	; Disable data register empty interrupt for URAT0
 	sts UCSR0B, temp
 
 	pop temp
