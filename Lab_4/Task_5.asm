@@ -14,9 +14,9 @@
 ;				host computer's terminal from input via serial.
 ;				Using interrupts.
 ;
-;	Input ports:
+;	Input ports: URAT0
 ;
-;	Output ports: PORTB
+;	Output ports: PORTB, URAT0
 ;
 ;	Subroutines: 
 ;

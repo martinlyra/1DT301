@@ -13,7 +13,7 @@
 ;	Function: 	Displays a ASCII character on LEDs via input
 ;				from serial connection. Using polling.
 ;
-;	Input ports:
+;	Input ports: URAT0
 ;
 ;	Output ports: PORTB
 ;
