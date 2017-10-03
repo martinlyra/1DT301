@@ -87,7 +87,7 @@ init_display:
 	call short_wait
 	
 	call display_clear
-	ret
+ret
 
 ;
 ; display_clear
@@ -100,8 +100,7 @@ display_clear:
 	ldi r24, low(20)
 	ldi r25, high(20)
 	call wait_milliseconds
-
-	ret
+ret
 
 ;
 ; display_write_char
@@ -136,7 +135,7 @@ display_write:
 	call display_write_nibble
 
 	pop tmp
-	ret
+ret
 
 ;
 ; display_write_nibble
@@ -151,7 +150,7 @@ display_write_nibble:
 	cbi PORTE, 5
 	nop
 	nop
-	ret
+ret
 
 ;
 ; display_switch
@@ -181,7 +180,7 @@ display_switch:
 
 	out PORTE, tmp
 	pop tmp
-	ret
+ret
 
 ;
 ; wait_milliseconds
@@ -230,5 +229,5 @@ short_wait:
 	
 	pop zh
 	pop zl
-	ret
+ret
 

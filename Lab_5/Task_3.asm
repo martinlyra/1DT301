@@ -66,7 +66,7 @@ call init_display ; Initialize display
 
 main: 
 	nop
-	rjmp main
+rjmp main
 
 ;
 ; urxc1_handler

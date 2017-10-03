@@ -78,7 +78,7 @@ main:
 	nop
 	nop
 	nop
-	rjmp main
+rjmp main
 
 ;
 ; tick
