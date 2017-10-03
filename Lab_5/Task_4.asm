@@ -1,9 +1,44 @@
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;	1DT301, Computer Technology I
+;	Date: 2016 - 10 - 02
+;	Author:
+;		Martin Lyrå
+;		Yinlong Yao
+;
+;	Lab number: 5
+;	Title: Display JHD202
+;
+;	Hardware: STK600, CPU ATmega2560, Display JHD202
+;
+;	Function: Display four lines of input strings two at time
+;	in a scrolling fashion, strings are input from serial.
+;
+;	Input ports: PORTD, URAT1
+;
+;	Output ports: PORTE
+;
+;	Subroutines:
+;	-	int1_handler
+;	-	urxc1_handler
+;	-	restore_z
+;	-	restore_x
+;	-	print_line
+;
+;	Included files: m2560def.inc, common.inc
+;
+;	Other information: common.inc contains code used by all
+;	tasks for this lab.
+;
+;	Changes in program:
+;		2017-10-02: File created
+;		2017-10-03: Documentation
+;
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 .include "m2560def.inc"
 
 ; 25 = 2400 bps
 ; 12 = 4800 bps
 ; 6 = 9600 bps
-
 .equ UBRR_DEFAULT = 12
 
 ; Scroll delay
@@ -73,15 +108,16 @@ sts UBRR1L, tmp
 ldi tmp, (1<<RXEN1 | 1<<RXCIE1)
 sts UCSR1B, tmp
 
-sei
+sei ; Enable interrupts
 
-call init_display
+call init_display ; Initialize display
 
-ldi tmp, 0
-ldi cntr, 0
+; Clear registers
+clr tmp
+clr cntr
 
 main: 
-	sbrs MODE, 0 ; Do not display or scroll when we are in WRITE mode
+	sbrs mode, 0 ; Do not display or scroll when we are in WRITE mode
 	rjmp main	
 
 	push cntr
@@ -109,24 +145,33 @@ main:
 	rcall restore_x
 	call print_line
 
-	; Delay
+	; Delay, currently set to 2,5 seconds
 	ldi r24, low(SCROLL_DELAY)
 	ldi r25, high(SCROLL_DELAY)
 	call wait_milliseconds
 		
 	; Exit the loop if we've switched to "WRITE"
-	sbrs MODE, 0
+	sbrs mode, 0
 	rjmp L3
 
 	pop cntr
 rjmp main
 
+;
+; int1_handler
+; Purpose: Switches between READ and WRITE mode
+;
 int1_handler:
 	com mode
 reti
 	
-
+;
+; urxc1_handler
+; Purpose: Load single character from serial input, save it in memory
+; and puts it on display
+;
 urxc1_handler:
+	; Don't do anything if we are not in WRITE mode
 	sbrc mode, 0
 	reti
 
@@ -136,7 +181,7 @@ urxc1_handler:
 	st y+, tmp			; Store input in memory
 	
 	; Store location of Y in table (pointer memory)
-	rcall restore_table_ptr ; Get the correct location first
+	rcall restore_z ; Get the correct location to the Z pointer first
 	st z+, yl
 	st z+, yh
 
@@ -148,21 +193,28 @@ urxc1_handler:
 	not_nl:
 
 	call display_clear
-	rcall restore_x		; Reset x pointer to start or last saved location of Y pointer
+	rcall restore_x ; Reset x pointer to start or last saved location of Y pointer
 	rcall print_line
 
 	pop tmp
 reti
 
-restore_table_ptr:
+;
+; restore_z
+; Purpose: Restore the Z pointer to start of table, and offset depending on which
+; line is active
+;
+restore_z:
+	; Move Z back to start of table memory
 	ldi zl, low(TABLE_START)
 	ldi zh, high(TABLE_START)
 
+	; Move forward 2 bytes for every N-1 lines
 	push tmp
 	cpi cntr, 0
 	breq E1
-		mov tmp, cntr
-		L1:
+	mov tmp, cntr
+	L1:	; while tmp > 0
 		adiw z, 2
 		dec tmp
 		brne L1
@@ -170,37 +222,48 @@ restore_table_ptr:
 	pop tmp
 ret
 
-; Reset the X pointer to start of memory - or to the last saved location of Y pointer
+;
+; restore_x
+; Purpose: Restore the X pointer to start of memory, or last saved position of Y pointer
+;
 restore_x:
-	rcall restore_table_ptr
 	cpi cntr, 0
 	breq default
-		; We are not at the first line, start off
-		; from the last saved Y pointer
-		ld xh, -z
-		ld xl, -z
-		adiw z, 2
 	
-		ret
+	; We are not at the first line, start off
+	; from the last saved Y pointer
+	rcall restore_z
+	ld xh, -z
+	ld xl, -z
+	adiw z, 2
+	ret
+	
 	default:
+	; Otherwise, move X pointer to start of memory
 	ldi xl, low(MEMORY_START)
 	ldi xh, high(MEMORY_START)
 ret
 
+;
+; print_line
+; Purpose: Print selected line to display
+;
 print_line:
+	; Checks to prevent out off of memory boundary errors
 	cp xh, yh
 	brne do_print
 	cp xl, yl
 	brge E0
 
+	; Load single character to data register
 	do_print:
-
 	ld dat, x+
-	cpi dat, NEW_LINE
+	cpi dat, NEW_LINE ; Stop when the loaded character is a '\n'
 	breq E0
 
+	; Display the character
 	call display_write_char
-	rjmp print_line		; Continue until X == Y
+	rjmp print_line		; Continue until X == Y or X is new line
 
 	E0:
 ret

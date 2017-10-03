@@ -1,3 +1,42 @@
+;>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+;	1DT301, Computer Technology I
+;	Date: 2016 - 10 - 02
+;	Author:
+;		Martin Lyrå
+;		Yinlong Yao
+;
+;	Lab number: 5
+;	Title: Display JHD202
+;
+;	Hardware: STK600, CPU ATmega2560, Display JHD202
+;
+;	Function: "Library" file for initializing and utilizing 
+;	the JHD202 display used in lab 5, on 4-bit mode.
+;
+;	Input ports: n/a
+;
+;	Output ports: PORTE
+;
+;	Subroutines:
+;	- init_display
+;	- display_clear
+;	- display_write_char
+;	- display_write_cmd
+;	- display_write
+;	- display_write_nibble
+;	- display_switch
+;	- wait_milliseconds
+;	- short_wait
+;
+;	Included files: m2560def.inc
+;
+;	Other information: Based on original code by Anders Haggren
+;
+;	Changes in program:
+;		2017-10-02: File created
+;		2017-10-03: Documentation
+;
+;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 .include "m2560def.inc"
 
 .equ DIS_REG_INSTRUCTION = 0b0000_0000
@@ -7,6 +46,7 @@
 .equ DIS_BITMODE4 	= 0b00_0010
 .equ DIS_EBC		= 0b00_1111	; enable on, blink on, cursor on
 
+; Used for display_switch
 .equ OUT_PIN_D4	= 0b0000_0100
 .equ OUT_PIN_D5	= 0b0000_1000
 .equ OUT_PIN_D6	= 0b0000_0001
@@ -14,12 +54,16 @@
 .equ OUT_PIN_RW	= 0b0010_0000
 .equ OUT_PIN_RS = 0b1000_0000
 
-.equ NEW_LINE = 0b0000_1101
+.equ NEW_LINE = 0b0000_1101 ; ASCII character for '\n'
 
 .def TMP = r16
 .def DAT = r17
 .def SEL = r18 ; selection register for display
 
+;
+; init_display
+; Purpose: Initializes the display on PORTE
+;
 init_display:
 	ser tmp
 	out DDRE, tmp
@@ -30,19 +74,25 @@ init_display:
 	ldi r25, high(20)
 	call wait_milliseconds	; power up wait
 
+	; We have only 8 pins can cannot afford 10-pins as required by JHD202
+	; 4-bit mode enables us to afford 6 pins, however
+	; Enable 4-bit mode
 	ldi dat, DIS_BITMODE4
 	call display_write_nibble
-
 	call short_wait
 
+	; Enable display, blinking on, and cursor on
 	ldi dat, DIS_EBC
 	call display_write_cmd
-
 	call short_wait
-
+	
 	call display_clear
 	ret
 
+;
+; display_clear
+; Purpose: Commands the display to clear its screen
+;
 display_clear:
 	ldi dat, DIS_CLEAR
 	call display_write_cmd
@@ -53,13 +103,25 @@ display_clear:
 
 	ret
 
+;
+; display_write_char
+; Purpose: Send output to the display as data
+;
 display_write_char:
 	ldi sel, DIS_REG_DATA
 	jmp display_write
 
+;
+; display_write_cmd
+; Purpose: Send output to the display as command
+;
 display_write_cmd:
 	ldi sel, DIS_REG_INSTRUCTION
 
+;
+; display_write
+; Purpose: Does the actual writing
+;
 display_write:
 	push tmp
 
@@ -76,6 +138,10 @@ display_write:
 	pop tmp
 	ret
 
+;
+; display_write_nibble
+; Purpose: Transmit data to the JHD202 display and then update it
+;
 display_write_nibble:
 	call display_switch
 	nop
@@ -87,6 +153,10 @@ display_write_nibble:
 	nop
 	ret
 
+;
+; display_switch
+; Purpose: Translate data to direct output for JHD202
+;
 display_switch:
 	push tmp
 	clr tmp
@@ -111,14 +181,13 @@ display_switch:
 
 	out PORTE, tmp
 	pop tmp
-
 	ret
 
-;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;
 ; wait_milliseconds
 ; Parameters: integer (r25:r24)
 ; Purpose: Wait N milliseconds
-;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+;
 wait_milliseconds:
 	push r16			; Store data in r16 and r17 to the stack first
 	push r17
@@ -144,13 +213,22 @@ wait_milliseconds:
 	pop r16
 ret
 
+;
+; short_wait
+; Purpose: ~40 us delay
+;
 short_wait:
+	push zl
+	push zh
+
 	clr zh
 	ldi zl, 30
-	jmp wait_loop
-
-wait_loop:
+	
+	wait_loop:
 	sbiw z, 1
 	brne wait_loop
+	
+	pop zh
+	pop zl
 	ret
 
