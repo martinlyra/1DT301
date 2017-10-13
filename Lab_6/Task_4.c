@@ -171,8 +171,8 @@ void refresh_display()
 	char line_selected = line_selection ? '_' : (current_line + '1');
 
 	// Assemble the header line then copy line 1 to end
-	//						 ************************ - 24 char limit
-	sprintf(memory_space_A, "Enter input: (Line %c)  %s", line_selected, lines[display_line-1]);
+	//			 ************************ - 24 char limit
+	sprintf(memory_space_A, "Enter input: (Line %c)   %s", line_selected, lines[display_line-1]);
 
 	// Set up the third display line, then copy chars from memory to it
 	char memory_space_B[48] = " ";
