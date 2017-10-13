@@ -175,9 +175,10 @@ void refresh_display()
 	sprintf(memory_space_A, "Enter input: (Line %c)  %s", line_selected, lines[display_line-1]);
 
 	// Set up the third display line, then copy chars from memory to it
-	char memory_space_B[48] = "";
-	for (int i = 0; i < 48; i++) 
-		memory_space_B[i] = lines[display_line][i];
+	char memory_space_B[48] = " ";
+	if (lines[display_line][0]) // Is selected string just a '\0'? If true; do nothing
+		for (int i = 0; i < 48; i++) 
+			memory_space_B[i] = lines[display_line][i];
 
 	// Boardcast all changes and then update the screen
 	boardcast('A', "O0001", memory_space_A);
